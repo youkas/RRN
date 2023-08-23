@@ -37,10 +37,12 @@ def analyse_pca():
 
 def plot_analysis():
     pca_results = np.load(f"../../database/pca analysis.npz", allow_pickle=True)['item'].item()
-
-    for k, v in pca_results.items():
+    names = list(cfg.data_configuration_selection.keys())
+    labels = list(cfg.data_configuration_selection.values())
+    colors = ['r', 'b', 'g', 'y']
+    for i, k in enumerate(names):
         dim = cfg.data_configurations[k]['first_dim']
-        plt.plot((np.arange(dim) + 1)/dim, v, '--', label=k)
+        plt.plot((np.arange(dim) + 1)/dim, pca_results[k], '--', color=colors[i], label=labels[i])
     plt.xlabel(r'$\dfrac{Number\ of\ components}{Primary\ dimension}$')
     plt.ylabel("Cumulative explained variance ratio")
     plt.title("PCA Analysis")

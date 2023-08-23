@@ -40,25 +40,27 @@ def create_model(data_path, primary_dim, secondary_dim, lattent_dim, model_path,
 results = np.load(f'../../database/modeling perf.npz', allow_pickle=True)['item'].item()
 results['RRNLike'] = {}
 data = ['D1', 'D2', 'D3', 'D4', 'D5']
+dimensions = np.arange(cfg.MIN_LATTENT_DIM, cfg.MAX_LATTENT_DIM + 1)
 
 for index, d in enumerate(data):
-    _epochs = 10000
-    _learning_rate = 0.01
-    _model_path = None
+    results['RRNLike'][d] = {}
+    for lt in dimensions:
+        _epochs = 10000
+        _learning_rate = 0.01
+        _lattent_dim = cfg.data_configurations[d]['first_dim']
+        _model_path = None
 
-    full_dimension = cfg.data_configurations[d]['first_dim'] + cfg.data_configurations[d]['second_dim']
+        source = f"data {cfg.data_configurations[d]['second_dim_name'].lower()}".strip()
+        _data_path = f'../../../{source}/{cfg.data_configurations[d]["name"]}'
 
-    source = f"data {cfg.data_configurations[d]['second_dim_name'].lower()}".strip()
-    _data_path = f'../../../{source}/{cfg.data_configurations[d]["name"]}'
-
-    out = create_model(_data_path,
-                       cfg.data_configurations[d]['first_dim'],
-                       cfg.data_configurations[d]['second_dim'],
-                       cfg.data_configurations[d]['first_dim'],
-                       _model_path,
-                       epochs=_epochs, learning_rate=_learning_rate)
-    results['RRNLike'][d] = {'AESE': np.average(out['stop_epoch']),
-                         'AMSE': np.average(out['MSE']),
-                         'AMPE': np.average(out['MPE'])}
+        out = create_model(_data_path,
+                           cfg.data_configurations[d]['first_dim'],
+                           cfg.data_configurations[d]['second_dim'],
+                           _lattent_dim,
+                           _model_path,
+                           epochs=_epochs, learning_rate=_learning_rate)
+        results['RRNLike'][d][_lattent_dim] = {'AESE': np.average(out['stop_epoch']),
+                                                 'AMSE': np.average(out['MSE']),
+                                                 'AMPE': np.average(out['MPE'])}
 
 np.savez_compressed(f'../../database/modeling perf.npz', item=results)

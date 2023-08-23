@@ -12,6 +12,9 @@ MACH_UPPER = MACH_NOMINAL + MACH_SCALE
 INCIDENCE_LOWER = INCIDENCE_NOMINAL - INCIDENCE_SCALE
 INCIDENCE_UPPER = INCIDENCE_NOMINAL + INCIDENCE_SCALE
 
+MIN_LATTENT_DIM = 2
+MAX_LATTENT_DIM = 48
+
 optimization = {'Det': 'Determinist', 'Rob1':'Robust Alpha', 'Rob2':'Robust Mach', 'Rob3':'Robust Alpha and Mach'}
 objectives = {'J1':"Drag to Lift ratio",
               'J2':"Drag minimization under constraint on Lift  (1%)",
@@ -20,16 +23,23 @@ objectives = {'J1':"Drag to Lift ratio",
               'J5':"Drag minimization under constraint on Lift (20%)"}
 radius = {'s':0.5, 'm':0.8, 'l':1.}
 data_configurations = {
-    'D1': {'name': '425 12 +-200 1000', 'size':1000, 'first_dim': 12, 'second_dim': 0, 'out_dim': 2, 'second_dim_name': '', 'out': ['rho_cl', 'rho_cd']},
-    'D2': {'name': '625 24 +-200 1000', 'size':1000, 'first_dim': 24, 'second_dim': 0, 'out_dim': 2, 'second_dim_name': '', 'out': ['rho_cl', 'rho_cd']},
-    'D3': {'name': '425 12 +-200 1000', 'size':1000, 'first_dim': 12, 'second_dim': 2, 'out_dim': 2, 'second_dim_name': 'MI', 'out': ['rho_cl', 'rho_cd']},
-    'D4': {'name': '625 24 +-200 1000', 'size':1000, 'first_dim': 24, 'second_dim': 2, 'out_dim': 2, 'second_dim_name': 'MI', 'out': ['rho_cl', 'rho_cd']},
-    'D5': {'name': '425 12 +-200 3000', 'size':3000, 'first_dim': 12, 'second_dim': 2, 'out_dim': 2, 'second_dim_name': 'MI', 'out': ['rho_cl', 'rho_cd']}
+    'D1': {'name': '425 12 +-200 1000', 'size':1000, 'first_dim': 12, 'second_dim': 0, 'out_dim': 2, 'second_dim_name': '', 'out': ['rho_Cl', 'rho_Cd']},
+    'D2': {'name': '625 24 +-200 1000', 'size':1000, 'first_dim': 24, 'second_dim': 0, 'out_dim': 2, 'second_dim_name': '', 'out': ['rho_Cl', 'rho_Cd']},
+    'D3': {'name': '425 12 +-200 1000', 'size':1000, 'first_dim': 12, 'second_dim': 2, 'out_dim': 2, 'second_dim_name': 'MI', 'out': ['rho_Cl', 'rho_Cd']},
+    'D4': {'name': '625 24 +-200 1000', 'size':1000, 'first_dim': 24, 'second_dim': 2, 'out_dim': 2, 'second_dim_name': 'MI', 'out': ['rho_Cl', 'rho_Cd']},
+    'D5': {'name': '425 12 +-200 3000', 'size':3000, 'first_dim': 12, 'second_dim': 2, 'out_dim': 2, 'second_dim_name': 'MI', 'out': ['rho_Cl', 'rho_Cd']}
 }
 
-model_types = {'RRN': 'Models with reparametrisation',
-               'RRNLike': 'Models with same architecture as RRN but without reparametrisation',
-               'Surrogate': 'Regressor only'}
+data_configuration_selection = {
+    'D1': 'Dataset 1',
+    'D3': 'Dataset 2',
+    'D5': 'Dataset 3',
+    'D2': 'Dataset 4'
+}
+
+model_types = {'RRN': 'RRN',
+               'RRNLike': 'RRN Like',
+               'Surrogate': 'Surrogate Like'}
 
 dimensions = {k:np.arange(2, 2 * v['first_dim'] + 1) for k, v in data_configurations.items()}
 
