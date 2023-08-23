@@ -47,7 +47,7 @@ for index, d in enumerate(data):
     for lt in dimensions:
         _epochs = 10000
         _learning_rate = 0.01
-        _lattent_dim = cfg.data_configurations[d]['first_dim']
+        _lattent_dim = int(lt)
         _model_path = None
 
         source = f"data {cfg.data_configurations[d]['second_dim_name'].lower()}".strip()
