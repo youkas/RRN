@@ -4,6 +4,7 @@ import numpy as np
 
 modeling_performance = np.load(f'../../database/modeling perf.npz', allow_pickle=True)['item'].item()
 decoder_performance = np.load(f"../../database/decoder perf.npz", allow_pickle=True)['item'].item()
+nn_decoder_performance = np.load(f"../../database/NN decoder perf.npz", allow_pickle=True)['item'].item()
 
 error_name = 'AMSE'
 error_label = 'Average MSE'
@@ -12,39 +13,54 @@ dimension_label = 'Lattent dimension'
 Z_NORM = 2  # np.inf
 Z_NORM_LABEL = r'$||Z||_2$'  # r'$||Z||_\infty$'
 DIMENSION_LABEL = 'Dimension change rate'  # 'Lattent dimension'
-ERROR_LABEL = 'Backward Parametrization Error'
+ERROR_LABEL = 'Decoder Error'
 
 
 def modeling_accuracy():
     import matplotlib.pyplot as plt
 
-    fig, axes = plt.subplots()
     names = list(cfg.data_configuration_selection.keys())
     labels = list(cfg.data_configuration_selection.values())
     indices = np.arange(len(names)) + 1
     types = ['RRN', 'RRNLike', 'Surrogate']
     colors = ['orange', 'b', 'r']
 
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': [5, 1, 5]})
+    fig.subplots_adjust(hspace=0.0)
+
+
     values = [np.array([modeling_performance['RRNLike'][n][k][error_name] for k in modeling_performance['RRNLike'][n].keys()]) for n in names]
-    axes.boxplot(values, labels=labels, patch_artist=True,
+    ax1.boxplot(values, labels=labels, patch_artist=True,
                  boxprops={'facecolor':'white'}, medianprops={'color':colors[types.index('RRNLike')]})
 
+    values = [modeling_performance['Surrogate'][n][error_name] for n in names]
+    p2, = ax1.plot(indices, values, '+', markersize=10, color=colors[types.index('Surrogate')], label=cfg.model_types['Surrogate'])
+
     values = [np.array([modeling_performance['RRN'][n][k][error_name] for k in modeling_performance['RRN'][n].keys()]) for n in names]
-    axes.boxplot(values, labels=labels, patch_artist=True,
+    ax3.boxplot(values, labels=labels, patch_artist=True,
                  boxprops={'facecolor':'white'}, medianprops={'color':colors[types.index('RRN')]})
 
-    values = [modeling_performance['Surrogate'][n][error_name] for n in names]
-    p2, = axes.plot(indices, values, '+', markersize=10, color=colors[types.index('Surrogate')], label=cfg.model_types['Surrogate'])
+    ax1.spines['bottom'].set_visible(False)
+    ax1.xaxis.tick_top()
+    ax1.tick_params(labeltop=False)
 
-    axes.set_xlabel(configuration_label)
-    axes.set_ylabel(error_label)
-    plt.yscale("log")
+    ax2.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax2.tick_params(right=False, left=False, labelbottom=False, labeltop=False, labelleft=False, labelright=False)
+    ax2.spines['left'].set_linestyle((0,(3,6)))
+    ax2.spines['right'].set_linestyle((0,(3,6)))
+
+    ax3.spines['top'].set_visible(False)
+    ax3.xaxis.tick_bottom()
+
+    ax3.set_xlabel(configuration_label)
+    ax1.set_ylabel(error_label)
 
     import matplotlib.lines as mlines
     rrn_like_patch =  mlines.Line2D([], [], color=colors[types.index('RRNLike')], label=cfg.model_types['RRNLike'])
     rrn_patch =  mlines.Line2D([], [], color=colors[types.index('RRN')], label=cfg.model_types['RRN'])
 
-    plt.legend(handles=[p2, rrn_like_patch, rrn_patch], ncol=3, title='Model type:')
+    ax1.legend(handles=[p2, rrn_like_patch, rrn_patch], ncol=3, title='Model type:')
     plt.show()
 
 def dim_change_accuracy():
@@ -69,7 +85,7 @@ def dim_change_accuracy():
     plt.legend(title=configuration_label, ncol=int(len(names) / 2))
     plt.show()
 
-def decoder_accuracy_by_dim():
+def decoder_accuracy_by_dim(performance, title):
     vmin = 0.06#2
     vmax = 2.#48
 
@@ -84,9 +100,9 @@ def decoder_accuracy_by_dim():
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     for n in names:
-        errors = np.vstack([v for v in decoder_performance['error'][n].values()])
-        norms = np.vstack([np.linalg.norm(v, ord=Z_NORM, axis=1) for v in decoder_performance['z'][n].values()])
-        dims = np.array([int(k) for k in decoder_performance['error'][n].keys()]).reshape(-1, 1)
+        errors = np.vstack([v for v in performance['error'][n].values()])
+        norms = np.vstack([np.linalg.norm(v, ord=Z_NORM, axis=1) for v in performance['z'][n].values()])
+        dims = np.array([int(k) for k in performance['error'][n].keys()]).reshape(-1, 1)
         dims = dims / cfg.data_configurations[n]['first_dim']
         dims = np.repeat(dims, errors.shape[1], axis=1)
         plt.scatter(norms, errors, c=dims, cmap=cmap, vmin=vmin, vmax=vmax, s=30, marker=markers[names.index(n)], label=labels[names.index(n)])
@@ -98,9 +114,10 @@ def decoder_accuracy_by_dim():
     plt.legend(by_label.values(), by_label.keys())
     plt.xlabel(Z_NORM_LABEL)
     plt.ylabel(ERROR_LABEL)
+    plt.title(title)
     plt.show()
 
-def decoder_accuracy_by_error():
+def decoder_accuracy_by_error(performance, title):
     vmin = 0
     vmax = 1.
 
@@ -115,9 +132,9 @@ def decoder_accuracy_by_error():
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     for n in names:
-        errors = np.vstack([v for v in decoder_performance['error'][n].values()])
-        norms = np.vstack([np.linalg.norm(v, ord=Z_NORM, axis=1) for v in decoder_performance['z'][n].values()])
-        dims = np.array([int(k) for k in decoder_performance['error'][n].keys()]).reshape(-1, 1)
+        errors = np.vstack([v for v in performance['error'][n].values()])
+        norms = np.vstack([np.linalg.norm(v, ord=Z_NORM, axis=1) for v in performance['z'][n].values()])
+        dims = np.array([int(k) for k in performance['error'][n].keys()]).reshape(-1, 1)
         dims = dims / cfg.data_configurations[n]['first_dim']
         dims = np.repeat(dims, errors.shape[1], axis=1)
         plt.scatter(dims, norms, c=errors, cmap=cmap, vmin=vmin, vmax=vmax, s=30, marker=markers[names.index(n)], label=labels[names.index(n)])
@@ -129,9 +146,12 @@ def decoder_accuracy_by_error():
     plt.legend(by_label.values(), by_label.keys())
     plt.xlabel(DIMENSION_LABEL)
     plt.ylabel(Z_NORM_LABEL)
+    plt.title(title)
     plt.show()
 
 modeling_accuracy()
 dim_change_accuracy()
-decoder_accuracy_by_dim()
-decoder_accuracy_by_error()
+decoder_accuracy_by_dim(decoder_performance, 'Optimization-based Decoder')
+decoder_accuracy_by_dim(nn_decoder_performance, 'Neural netwaork-based Decoder')
+decoder_accuracy_by_error(decoder_performance, 'Optimization-based Decoder')
+decoder_accuracy_by_error(nn_decoder_performance, 'Neural netwaork-based Decoder')

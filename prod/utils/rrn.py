@@ -1,15 +1,20 @@
+import warnings
+
 import matplotlib.pyplot as plt
 from keras.callbacks import EarlyStopping
 
 from prod.utils.losses import *
 
 class RRN:
-    def __init__(self, dimension=None, encoder=None, regressor=None, calibration=None, adapter=None, calibrate=True):
+    def __init__(self, dimension=None, encoder=None, decoder=None, regressor=None, calibration=None,
+                 scaler=None, adapter=None, calibrate=True):
         self.history = {}
         self.dimension = dimension
         self.encoder = encoder
+        self.decoder = decoder
         self.regressor = regressor
         self.calibration = calibration
+        self.scaler = scaler
         self.adapter = adapter
         self.calibrate = calibrate
         self.enable_calibration = True
@@ -17,7 +22,21 @@ class RRN:
     def encode(self, x):
         return self.encoder.predict(x)
 
-    def decode(self, z, x_lower, x_upper, verbose=False):
+    def decode(self, z, use_model=False, x_lower=None, x_upper=None, verbose=False):
+        if use_model:
+            return self._nn_decode_(z)
+        if x_lower is None or x_upper is None:
+            raise Exception('Upper and Lower bounds are required for decoding optimization.')
+        z_len = z.shape[1]
+        if z_len == 1:
+            return self._opt_decode_(z, x_lower, x_upper, verbose=verbose)
+        return np.array([self._opt_decode_(zi.reshape((1, -1)), x_lower, x_upper, verbose=verbose)  for zi in z])
+
+    def _nn_decode_(self, z):
+        x_hat = self.decoder.predict(z)
+        return self.scaler.predict(x_hat)
+
+    def _opt_decode_(self, z, x_lower, x_upper, verbose=False):
         #from pymoo.algorithms.so_pso import PSO
         from pymoo.algorithms.so_genetic_algorithm import GA
         from pymoo.optimize import minimize
@@ -64,8 +83,15 @@ class RRN:
                             history=self.history)
 
     def load(self, filepath):
-        ms = {n:tf.keras.models.load_model(filepath+'\\'+n) for n in self.__get_models__().keys()}
-        self.__set_models__(dict(ms))
+        ms = {}
+        for n in self.__get_models__().keys():
+            model_file_name = filepath+'\\'+n
+            try:
+                ms[n] = tf.keras.models.load_model(model_file_name)
+            except Exception as e:
+                ms[n] = None
+                warnings.warn(str(e))
+        self.__set_models__(ms)
         params =  np.load(filepath+'\\params.npz', allow_pickle=True)
         self.dimension = params['dimension']
         self.enable_calibration = params['enable_calibration'] if 'enable_calibration' in params else True
@@ -73,24 +99,55 @@ class RRN:
 
     def get_weights(self):
         return dict(encoder=self.encoder.get_weights(),
+                    decoder=self.decoder.get_weights(),
                     regressor=self.regressor.get_weights(),
                     calibration=self.calibration.get_weights(),
+                    scaler=self.scaler.get_weights(),
                     adapter=self.adapter.get_weights())
 
     def set_weights(self, weights):
         self.encoder.set_weights(weights['encoder'])
+        self.decoder.set_weights(weights['decoder'])
         self.regressor.set_weights(weights['regressor'])
         self.calibration.set_weights(weights['calibration'])
+        self.scaler.set_weights(weights['scaler'])
         self.adapter.set_weights(weights['adapter'])
 
     def __get_models__(self):
-        return {'encoder':self.encoder, 'regressor':self.regressor, 'calibration':self.calibration, 'adapter':self.adapter}
+        return {'encoder':self.encoder,
+                'decoder':self.decoder,
+                'regressor':self.regressor,
+                'calibration':self.calibration,
+                'scaler':self.scaler,
+                'adapter':self.adapter}
 
     def __set_models__(self, models):
-        self.encoder = models['encoder']
-        self.regressor = models['regressor']
-        self.calibration = models['calibration']
-        self.adapter = models['adapter']
+        if models['encoder'] is not None:
+            self.encoder = models['encoder']
+        if models['decoder'] is not None:
+            self.decoder = models['decoder']
+        if models['regressor'] is not None:
+            self.regressor = models['regressor']
+        if models['calibration'] is not None:
+            self.calibration = models['calibration']
+        if models['scaler'] is not None:
+            self.scaler = models['scaler']
+        if models['adapter'] is not None:
+            self.adapter = models['adapter']
+
+    def __reset_models__(self, *names):
+        if 'encoder' in names:
+            self.encoder = None
+        if 'decoder' in names:
+            self.decoder = None
+        if 'regressor' in names:
+            self.regressor = None
+        if 'calibration' in names:
+            self.calibration = None
+        if 'scaler' in names:
+            self.scaler = None
+        if 'adapter' in names:
+            self.adapter = None
 
 class Trainer(tf.keras.Model):
     def __init__(self, model, x_dim, w_dim, training_mode='FitAndCalibrate'):
@@ -101,6 +158,8 @@ class Trainer(tf.keras.Model):
         self.w_dim = w_dim
         self.training_loss = None
         self.validation_loss = None
+        self.dec_training_loss = None
+        self.dec_validation_loss = None
         self.cal_training_loss = None
         self.cal_validation_loss = None
         self.optimizer = None
@@ -119,6 +178,9 @@ class Trainer(tf.keras.Model):
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.training_loss = SumLoss(YReconstructionLoss(), RegularizationLoss(), CorrelationLoss())
         self.validation_loss = SumLoss(YReconstructionLoss(), RegularizationLoss(), CorrelationLoss())
+
+        self.dec_training_loss = SumLoss(XReconstructionLoss())
+        self.dec_validation_loss = SumLoss(XReconstructionLoss())
 
         self.cal_training_loss = SumLoss(CalibrationLoss(kind='NormInf')) # NormInf or Norm1
         self.cal_validation_loss = SumLoss(CalibrationLoss(kind='NormInf'))
@@ -144,6 +206,9 @@ class Trainer(tf.keras.Model):
             self.model.enable_calibration = False
             print('Fitting')
             self._fit_([x, y], [val_x, val_y], epochs=epochs, batch_size=batch_size, verbose=verbose, patience=patience)
+        elif self._training_mode == 'Decode':
+            print('Decoding')
+            self._decode_([x, y], [val_x, val_y], epochs=epochs, batch_size=batch_size, verbose=verbose, patience=patience)
         else:
             raise Exception(f'Unknown Training mode: {self._training_mode}')
 
@@ -152,7 +217,6 @@ class Trainer(tf.keras.Model):
 
         if model_path is not None:
             self.model.save(model_path)
-
 
     def test(self, x, y):
         if not len(x) or not len(y):
@@ -257,6 +321,29 @@ class Trainer(tf.keras.Model):
                                          'validation':self.validation_loss.get_losses()}
         self._mode = None
 
+    def _decode_(self, data, val_data, epochs=10, batch_size=50, verbose=0, patience=5):
+        self._mode = 'Decode'
+        self.fit(data,
+                           validation_data=val_data,
+                           epochs=epochs,
+                           verbose=verbose,
+                           batch_size=batch_size,
+                           callbacks=[UpdateLoss(self.dec_training_loss, self.dec_validation_loss),
+                                      EarlyStopping(
+                                          monitor='val_loss',
+                                          min_delta=0,
+                                          patience=patience,
+                                          verbose=1,
+                                          mode='auto',
+                                          baseline=None,
+                                          restore_best_weights=True
+                                      )
+                                      ])
+
+        self.model.history['decoding'] = {'training':self.dec_training_loss.get_losses(),
+                                         'validation':self.dec_validation_loss.get_losses()}
+        self._mode = None
+
     def _calibrate_(self, data, val_data, epochs=10, batch_size=50, verbose=0, patience=5):
         self._mode = 'Calibrate'
         self.fit(data,
@@ -283,7 +370,15 @@ class Trainer(tf.keras.Model):
         if self._training_mode == 'FitAndCalibrate':
             return self._fitting_and_calibration_(x, y)
         else:
-            loss = self._fitting_(x, y) if self._mode == 'Fit' else self._calibration_(x, y)
+            if self._mode == 'Fit':
+                loss = self._fitting_(x, y)
+            elif self._mode == 'Decode':
+                loss = self._decoding_(x, y)
+            elif self._mode == 'Calibrate':
+                loss = self._calibration_(x, y)
+            else:
+                raise Exception(f'Unknown mode: {self._mode}')
+
             return {'loss': loss}
 
     def test_step(self, data):
@@ -291,7 +386,15 @@ class Trainer(tf.keras.Model):
         if self._training_mode == 'FitAndCalibrate':
             return self._test_fitting_and_calibration_(x, y)
         else:
-            loss = self._test_fitting_(x, y) if self._mode == 'Fit' else self._test_calibration_(x, y)
+            if self._mode == 'Fit':
+                loss = self._test_fitting_(x, y)
+            elif self._mode == 'Decode':
+                loss = self._test_decoding_(x, y)
+            elif self._mode == 'Calibrate':
+                loss = self._test_calibration_(x, y)
+            else:
+                raise Exception(f'Unknown mode: {self._mode}')
+
             return {'loss': loss}
 
     def _fitting_and_calibration_(self, x, y):
@@ -335,6 +438,17 @@ class Trainer(tf.keras.Model):
 
         return error
 
+    def _decoding_(self, x, y):
+        with tf.GradientTape() as d_tape:
+            z = self.model.encoder(x[:, :self.x_dim], training=False)
+            x_hat = self.model.decoder(z, training=True)
+            error = self.dec_training_loss(x[:, :self.x_dim], x_hat)
+
+        grads = d_tape.gradient(error, self.model.decoder.trainable_weights)
+        self.optimizer.apply_gradients(zip(grads, self.model.decoder.trainable_weights))
+
+        return error
+
     def _calibration_(self, x, y):
         with tf.GradientTape() as c_tape:
             z = self.model.encoder(x[:, :self.x_dim], training=False)
@@ -368,6 +482,11 @@ class Trainer(tf.keras.Model):
         y_hat = self.model.regressor(zw, training=False)
         return self.validation_loss(x[:, :self.x_dim], y, None, z, None, None, y_hat)
 
+    def _test_decoding_(self, x, y):
+        z = self.model.encoder(x[:, :self.x_dim], training=False)
+        x_hat = self.model.decoder(z, training=False)
+        return self.dec_validation_loss(x[:, :self.x_dim], x_hat)
+
     def _test_calibration_(self, x, y):
         z = self.model.encoder(x[:, :self.x_dim], training=False)
         zw = tf.concat([z, x[:, self.x_dim:]], axis=1)
@@ -390,10 +509,14 @@ class Surrogate(RRN):
         self.y_dim = y_dim
         self.z_dim = z_dim
 
-        self.x_scale = 1 / x_dispersion if x_dispersion is not None else np.ones(self.x_dim + self.w_dim)
-        self.x_offset = - x_middle * self.x_scale if x_middle is not None else np.zeros(self.x_dim + self.w_dim)
-        self.scale = y_dispersion if y_dispersion is not None else np.ones(self.y_dim)
-        self.offset = y_middle if y_middle is not None else np.zeros(self.y_dim)
+        self.x_dispersion = x_dispersion if x_dispersion is not None else np.ones(self.x_dim + self.w_dim)
+        self.x_middle = x_middle if x_middle is not None else np.zeros(self.x_dim + self.w_dim)
+
+        self.x_scale = 1 / self.x_dispersion
+        self.x_offset = - self.x_middle * self.x_scale
+
+        self.y_scale = y_dispersion if y_dispersion is not None else np.ones(self.y_dim)
+        self.y_offset = y_middle if y_middle is not None else np.zeros(self.y_dim)
 
         self.encoder_length = encoder_length
         self.regressor_length = regressor_length
@@ -401,13 +524,15 @@ class Surrogate(RRN):
 
         assert len(self.x_scale) == self.x_dim + self.w_dim
         assert len(self.x_offset) == self.x_dim + self.w_dim
-        assert len(self.scale) == self.y_dim
-        assert len(self.offset) == self.y_dim
+        assert len(self.y_scale) == self.y_dim
+        assert len(self.y_offset) == self.y_dim
         RRN.__init__(self,
                      dimension=z_dim,
                      encoder=self.__get_encoder__(),
+                     decoder=self.__get_decoder__(),
                      regressor=self.__get_regressor__(),
                      calibration=self.__get_calibration__(),
+                     scaler=self.__get_scaler__(),
                      adapter=self.__get_adapter__())
 
     def __get_encoder__(self):
@@ -419,6 +544,17 @@ class Surrogate(RRN):
         z = tf.keras.layers.Dense(self.z_dim)(z)
 
         model = tf.keras.Model(inputs=x_input, outputs=z, name="Encoder")
+        if self.verbose:
+            model.summary()
+        return model
+
+    def __get_decoder__(self):
+        z_input = tf.keras.Input(shape=self.z_dim, name='Z')
+
+        x_hat = tf.keras.layers.Dense(self.encoder_length, activation=activation_function)(z_input)
+        x_hat = tf.keras.layers.Dense(self.x_dim)(x_hat)
+
+        model = tf.keras.Model(inputs=z_input, outputs=x_hat, name="Decoder")
         if self.verbose:
             model.summary()
         return model
@@ -456,8 +592,17 @@ class Surrogate(RRN):
     def __get_adapter__(self):
         y_inputs = tf.keras.Input(shape=self.y_dim, name='y_layer')
 
-        y = tf.keras.layers.Rescaling(self.scale, offset=self.offset)(y_inputs)
+        y = tf.keras.layers.Rescaling(self.y_scale, offset=self.y_offset)(y_inputs)
         model = tf.keras.Model(inputs=y_inputs, outputs=y, name="Adaptation")
+        if self.verbose:
+            model.summary()
+        return model
+
+    def __get_scaler__(self):
+        x_hat_inputs = tf.keras.Input(shape=self.x_dim, name='X_scaler')
+
+        x_hat = tf.keras.layers.Rescaling(self.x_scale[:self.x_dim], offset=self.x_offset[:self.x_dim])(x_hat_inputs)
+        model = tf.keras.Model(inputs=x_hat_inputs, outputs=x_hat, name="Scaling")
         if self.verbose:
             model.summary()
         return model

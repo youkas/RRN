@@ -70,7 +70,7 @@ def get_master_z():
         errors['z'][d] = {}
         lts = cfg.dimensions[d]
         for lt in lts:
-            z = PLHS([-1., 1.], lt, 10)
+            z = PLHS(1., lt, 10)
             #norm = np.linalg.norm(z, axis=1)
             #print(z.shape)
             #print(np.min(norm), np.max(norm), np.mean(norm), np.std(norm))

@@ -57,6 +57,13 @@ def mean_distance(x, y, kind='MSE'):
 
     return tf.reduce_mean(distances)
 
+class XReconstructionLoss(LossFunction):
+    def __init__(self):
+        LossFunction.__init__(self, 'X Reconstruction')
+
+    def compute(self, x, x_hat):
+        return mean_distance(x, x_hat)
+
 class YReconstructionLoss(LossFunction):
     def __init__(self):
         LossFunction.__init__(self, 'Y Reconstruction')
