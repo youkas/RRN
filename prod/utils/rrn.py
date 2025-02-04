@@ -173,11 +173,11 @@ class Trainer(tf.keras.Model):
     def set_weights(self, weights):
         self.model.set_weights(weights)
 
-    def compile(self, learning_rate=0.01, **kwargs):
+    def compile(self, learning_rate=0.01, kernel=None, **kwargs):
         tf.keras.Model.compile(self, run_eagerly=True)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        self.training_loss = SumLoss(YReconstructionLoss(), RegularizationLoss(), CorrelationLoss())
-        self.validation_loss = SumLoss(YReconstructionLoss(), RegularizationLoss(), CorrelationLoss())
+        self.training_loss = SumLoss(YReconstructionLoss(), RegularizationLoss(), CorrelationLoss(kernel=kernel))
+        self.validation_loss = SumLoss(YReconstructionLoss(), RegularizationLoss(), CorrelationLoss(kernel=kernel))
 
         self.dec_training_loss = SumLoss(XReconstructionLoss())
         self.dec_validation_loss = SumLoss(XReconstructionLoss())

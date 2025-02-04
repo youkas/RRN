@@ -93,9 +93,34 @@ class CalibrationLoss(LossFunction):
     def compute(self, err, err_hat):
         return mean_distance(err, err_hat, kind=self.kind)
 
+def pearson_correlation(X, Y):
+    dims = tf.shape(X)[1]
+    cor_mat = np.corrcoef(np.hstack((X, Y)), rowvar=False)
+    cor_xx = cor_mat[:dims, :dims]
+    cor_xy = cor_mat[:dims, dims:]
+    return cor_xx, cor_xy
+
+from scipy.spatial import distance_matrix
+def RBF_kernel(X, Y, gamma=1.):
+    dims = tf.shape(X)[1]
+    XY = np.hstack((X, Y))
+    dm = distance_matrix(XY.T, XY.T).T
+    k = np.exp(-gamma * dm)
+    k_xx = k[:dims, :dims]
+    k_xy = k[:dims, dims:]
+    return k_xx, k_xy
+
 class CorrelationLoss(LossFunction):
-    def __init__(self):
+    def __init__(self, kernel=None):
         LossFunction.__init__(self, 'Correlation Loss')
+        self.kernel_function = pearson_correlation
+        if kernel is not None:
+            if kernel == "pearson":
+                pass
+            elif kernel == "RBF":
+                self.kernel_function = RBF_kernel
+            else:
+                raise Exception("unknown Kernel function")
 
     def compute(self, x, y, w, z, w_hat, x_hat, y_hat):
         x_cor = self._multiple_correlations_(x, y)
@@ -103,10 +128,11 @@ class CorrelationLoss(LossFunction):
         return tf.reduce_mean(tf.square(x_cor - z_cor))
 
     def _multiple_correlations_(self, Z, Y):
-        dims = tf.shape(Z)[1]
-        cor_mat = np.corrcoef(np.hstack((Z, Y)), rowvar=False)
-        cor_xx = cor_mat[:dims, :dims]
-        cor_xy = cor_mat[:dims, dims:]
+        #dims = tf.shape(Z)[1]
+        #cor_mat = np.corrcoef(np.hstack((Z, Y)), rowvar=False)
+        #cor_xx = cor_mat[:dims, :dims]
+        #cor_xy = cor_mat[:dims, dims:]
+        cor_xx, cor_xy = self.kernel_function(Z, Y)
         multiple_correlation = np.array(np.diag(np.matmul(cor_xy.T, np.matmul(np.linalg.pinv(cor_xx), cor_xy))), dtype='float32')
         return tf.convert_to_tensor(multiple_correlation)
 
