@@ -40,7 +40,9 @@ def create_model(data_path, primary_dim, secondary_dim, lattent_dim, model_path,
         kpis['stop_epoch'].append(trainer.stop_epoch)
     return kpis
 
-results = {'kRRN':{}}
+results = np.load(f'../../database/modeling perf.npz', allow_pickle=True)['item'].item()
+results['kRRN'] = {}
+
 data = ['D1', 'D2', 'D3', 'D4', 'D5']
 dimensions = np.arange(cfg.MIN_LATTENT_DIM, cfg.MAX_LATTENT_DIM + 1)
 
