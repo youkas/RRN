@@ -27,7 +27,7 @@ class RRN:
             return self._nn_decode_(z)
         if x_lower is None or x_upper is None:
             raise Exception('Upper and Lower bounds are required for decoding optimization.')
-        z_len = z.shape[1]
+        z_len = z.shape[0]
         if z_len == 1:
             return self._opt_decode_(z, x_lower, x_upper, verbose=verbose)
         return np.array([self._opt_decode_(zi.reshape((1, -1)), x_lower, x_upper, verbose=verbose)  for zi in z])

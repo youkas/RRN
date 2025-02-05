@@ -93,6 +93,6 @@ def load_model(keys, root='./models'):
     models = {}
     for k in keys:
         M, D, d, r, O, f = k.split(sep='_')
-        models[k] = rrn.RRN() if M == 'RRN' else ann.ANN()
+        models[k] = rrn.RRN() if M in ['kRRN', 'RRN'] else ann.ANN()
         models[k].load(f'{root}/{M}/{D}/{d}')
     return models
