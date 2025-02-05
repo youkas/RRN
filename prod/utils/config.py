@@ -37,7 +37,8 @@ data_configuration_selection = {
     'D2': 'Dataset 4'
 }
 
-model_types = {'RRN': 'RRN',
+model_types = {'kRRN': 'kRRN',
+               'RRN': 'RRN',
                'RRNLike': 'RRN Like',
                'Surrogate': 'Surrogate Like'}
 

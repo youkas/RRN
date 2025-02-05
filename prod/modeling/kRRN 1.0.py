@@ -2,10 +2,6 @@ import numpy as np
 from prod.utils import rrn
 from prod.utils import config as cfg
 
-
-
-from prod.utils.losses import pearson_correlation, RBF_kernel
-
 def create_model(data_path, primary_dim, secondary_dim, lattent_dim, model_path,
                  training_mode='Fit', epochs=50, calibration_epochs=25, learning_rate=0.001, patience=5):
 

@@ -22,8 +22,8 @@ def modeling_accuracy():
     names = list(cfg.data_configuration_selection.keys())
     labels = list(cfg.data_configuration_selection.values())
     indices = np.arange(len(names)) + 1
-    types = ['RRN', 'RRNLike', 'Surrogate']
-    colors = ['orange', 'b', 'r']
+    types = ['kRRN', 'RRN', 'RRNLike', 'Surrogate']
+    colors = ['green', 'orange', 'b', 'r']
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': [5, 1, 5]})
     fig.subplots_adjust(hspace=0.0)
@@ -39,6 +39,10 @@ def modeling_accuracy():
     values = [np.array([modeling_performance['RRN'][n][k][error_name] for k in modeling_performance['RRN'][n].keys()]) for n in names]
     ax3.boxplot(values, labels=labels, patch_artist=True,
                  boxprops={'facecolor':'white'}, medianprops={'color':colors[types.index('RRN')]})
+
+    values = [np.array([modeling_performance['kRRN'][n][k][error_name] for k in modeling_performance['kRRN'][n].keys()]) for n in names]
+    ax3.boxplot(values, labels=labels, patch_artist=True,
+                 boxprops={'facecolor':'white'}, medianprops={'color':colors[types.index('kRRN')]})
 
     ax1.spines['bottom'].set_visible(False)
     ax1.xaxis.tick_top()
@@ -59,8 +63,9 @@ def modeling_accuracy():
     import matplotlib.lines as mlines
     rrn_like_patch =  mlines.Line2D([], [], color=colors[types.index('RRNLike')], label=cfg.model_types['RRNLike'])
     rrn_patch =  mlines.Line2D([], [], color=colors[types.index('RRN')], label=cfg.model_types['RRN'])
+    krrn_patch =  mlines.Line2D([], [], color=colors[types.index('kRRN')], label=cfg.model_types['kRRN'])
 
-    ax1.legend(handles=[p2, rrn_like_patch, rrn_patch], ncol=3, title='Model type:')
+    ax1.legend(handles=[p2, rrn_like_patch, rrn_patch, krrn_patch], ncol=3, title='Model type:')
     plt.show()
 
 def dim_change_accuracy():
@@ -68,17 +73,20 @@ def dim_change_accuracy():
     names = list(cfg.data_configuration_selection.keys())
     labels = list(cfg.data_configuration_selection.values())
     indices = np.arange(len(names)) + 1
-    types = ['RRN', 'RRNLike', 'Surrogate']
+    types = ['kRRN', 'RRN']
+    marker = ['+', 'x']
+    line_style = ['-', (0, (5, 2))]
     colors = ['r', 'g', 'b', 'c', 'm']
 
     fig, axes = plt.subplots()
-    for i, n in enumerate(names):
-        x = [int(k) for k in modeling_performance['RRN'][n].keys()]
-        y = [v[error_name] for v in modeling_performance['RRN'][n].values()]
-        coef = np.polyfit(x, y, 1)
-        poly1d_fn = np.poly1d(coef)
-        axes.plot(x, y, 'x', markersize=5, color=colors[names.index(n)], label=f'{labels[i]}')
-        axes.plot(x, poly1d_fn(x), linestyle=(0, (5, 2)), color=colors[names.index(n)])
+    for j, t in enumerate(types):
+        for i, n in enumerate(names):
+            x = [int(k) for k in modeling_performance[t][n].keys()]
+            y = [v[error_name] for v in modeling_performance[t][n].values()]
+            coef = np.polyfit(x, y, 1)
+            poly1d_fn = np.poly1d(coef)
+            axes.plot(x, y, marker[j], markersize=5, color=colors[names.index(n)], label=f'{t} {labels[i]}')
+            axes.plot(x, poly1d_fn(x), linestyle=line_style[j], color=colors[names.index(n)])
     axes.set_xlabel(dimension_label)
     axes.set_ylabel(error_label)
 
