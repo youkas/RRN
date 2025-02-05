@@ -17,7 +17,6 @@ for c, v in cfg.data_configurations.items():
     ml.save(shape_generators[c].lattice, f"../database/lattice/{c}.npz", asType=Lattice)
 
 IDS = cfg.get_ids()
-
 database = np.load(f"../database/results.npz", allow_pickle=True)['item'].item()
 for _id in IDS:
     results = database["results"]

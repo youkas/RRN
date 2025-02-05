@@ -36,11 +36,11 @@ data_configuration_selection = {
     'D5': 'Dataset 3',
     'D2': 'Dataset 4'
 }
-
-model_types = {'kRRN': 'kRRN',
-               'RRN': 'RRN',
+model_types = {'RRN': 'RRN',
+               'kRRN': 'kRRN',
                'RRNLike': 'RRN Like',
                'Surrogate': 'Surrogate Like'}
+
 
 dimensions = {k:np.arange(2, 2 * v['first_dim'] + 1) for k, v in data_configurations.items()}
 

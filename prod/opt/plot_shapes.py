@@ -42,19 +42,18 @@ ml.save(initial_shape, f"../database/shape/initial.npz", asType=msh.Mesh)
 print(initial_shape.get('Pressure'))
 min_v, max_v = np.min(initial_mesh.get('Pressure')), np.max(initial_mesh.get('Pressure'))
 print(min_v, max_v)
-
+"""
 for c, v in cfg.data_configurations.items():
     lattice = ml.load(f"../database/lattice/{c}.npz", asType=Lattice)
     path = f'../database/vtk/{c}/'
     if not os.path.isdir(path):
         os.mkdir(path)
     plot(lattice, initial_shape, initial_mesh, path)
-
+"""
 IDS = cfg.get_ids()
 
 for _id in IDS:
     try:
-        print(f"{_id}")
         lattice = ml.load(f"../database/lattice/{_id}.npz", asType=Lattice)
         shape = ml.load(f"../database/shape/{_id}.npz", asType=msh.Mesh)
         mesh = ml.load(f"../database/mesh/{_id}.npz", asType=msh.Mesh)
@@ -65,5 +64,6 @@ for _id in IDS:
         if not os.path.isdir(path):
             os.mkdir(path)
         plot(lattice, shape, mesh, path)
+        print(f"{_id} Processed successfully")
     except FileNotFoundError as e:
         print(str(e))

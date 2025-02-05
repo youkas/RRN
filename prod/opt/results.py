@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def print_results(results, selection=None):
-    print('RRN Results:')
+    print('Results:')
     print(f" {68 * '_'} "
           f"|{35 * chr(8254)}||{35 * chr(8254)}||{92 * chr(8254)}|")
     print(f"|{'Category':68s}|"
@@ -99,10 +99,10 @@ DETERMINIST = ['RRN_D5_2_s_Det_J1', 'kRRN_D5_2_s_Det_J1',
                'RRN_D5_2_s_Det_J2', 'kRRN_D5_2_s_Det_J2',
                'RRN_D5_2_m_Det_J2', 'kRRN_D5_2_m_Det_J2',
                'RRN_D5_2_l_Det_J2', 'kRRN_D5_2_l_Det_J2']
-ROBUST = ['RRN_D5_2_l_Rob1_J1',
-          'RRN_D5_2_l_Rob2_J1',
-          'RRN_D5_2_l_Rob3_J1']
-ROBUST_SHAPE = ['RRN_D5_2_l_Rob3_J1']
+ROBUST = ['RRN_D5_2_l_Rob1_J1','kRRN_D5_2_l_Rob1_J1',
+          'RRN_D5_2_l_Rob2_J1','kRRN_D5_2_l_Rob2_J1',
+          'RRN_D5_2_l_Rob3_J1', 'kRRN_D5_2_l_Rob3_J1']
+ROBUST_SHAPE = ['RRN_D5_2_l_Rob3_J1', 'kRRN_D5_2_l_Rob3_J1']
 
 print_results(_results, DETERMINIST)
 plot_pareto_frontiers(_results, ROBUST, ROBUST_SHAPE)

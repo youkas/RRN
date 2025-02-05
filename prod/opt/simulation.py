@@ -4,9 +4,9 @@ from prod.utils import config as cfg
 from prod.utils import sim
 import msof.mesh as msh
 
-mesh = ml.load(f"../database/mesh/initial.npz", asType=msh.Mesh)
-solution, Cl, Cd = sim.solve(mesh, cfg.MACH_NOMINAL, cfg.INCIDENCE_NOMINAL)
-ml.save(solution, f"../database/mesh/initial.npz", asType=msh.Mesh)
+#mesh = ml.load(f"../database/mesh/initial.npz", asType=msh.Mesh)
+#solution, Cl, Cd = sim.solve(mesh, cfg.MACH_NOMINAL, cfg.INCIDENCE_NOMINAL)
+#ml.save(solution, f"../database/mesh/initial.npz", asType=msh.Mesh)
 
 IDS = cfg.get_ids()
 database = np.load(f"../database/results.npz", allow_pickle=True)['item'].item()
