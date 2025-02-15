@@ -30,7 +30,7 @@ for _id in IDS:
     ratio_z = Y_z[1]/Y_z[0]
     J_z = res.F.flatten()[0]
 
-    x = models[_id].decode(z, x_lower=-200 * np.ones(dim_x), x_upper=200 * np.ones(dim_x), verbose=True)
+    x = models[_id].decode(z, x_lower=-400 * np.ones(dim_x), x_upper=400 * np.ones(dim_x), verbose=True)
     z_hat = models[_id].encode(x)
     decoder_error = np.linalg.norm(z - z_hat, axis=1).flatten()[0]
     Y_x = mapper.evaluate(z_hat).flatten()

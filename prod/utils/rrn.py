@@ -29,16 +29,17 @@ class RRN:
             raise Exception('Upper and Lower bounds are required for decoding optimization.')
         z_len = z.shape[0]
         if z_len == 1:
-            return self._opt_decode_(z, x_lower, x_upper, verbose=verbose)
+            return self._opt_decode_(z, x_lower, x_upper, verbose=verbose, pop=20)
         return np.array([self._opt_decode_(zi.reshape((1, -1)), x_lower, x_upper, verbose=verbose)  for zi in z])
 
     def _nn_decode_(self, z):
         x_hat = self.decoder.predict(z)
         return self.scaler.predict(x_hat)
 
-    def _opt_decode_(self, z, x_lower, x_upper, verbose=False):
+    def _opt_decode_(self, z, x_lower, x_upper, verbose=False, pop=20):
         #from pymoo.algorithms.so_pso import PSO
         from pymoo.algorithms.so_genetic_algorithm import GA
+        #from pymoo.algorithms.so_pso import PSO
         from pymoo.optimize import minimize
         from pymoo.model.problem import Problem
 
@@ -53,7 +54,7 @@ class RRN:
                 out["F"] = np.linalg.norm(self._encoder(X) - self._target, axis=1)
 
         #algo = PSO()
-        algo = GA(pop_size=20*len(x_lower), eliminate_duplicates=True)
+        algo = GA(pop_size=pop*len(x_lower), eliminate_duplicates=True)
         res = minimize(DecoderProblem(self.encode, z, x_lower, x_upper),
                        algo,
                        seed=1,

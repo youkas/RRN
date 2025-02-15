@@ -16,6 +16,9 @@ for _id in IDS:
         continue
     if not results[_id]['artefact']["mesh"]:
         continue
+    if "ClCd" in results[_id]['effective'] and results[_id]['effective']["ClCd"][0]:
+        continue
+
     m, c, d, r, o, f = _id.split(sep='_')
 
     mesh = ml.load(f"../database/mesh/{_id}.npz", asType=msh.Mesh)
