@@ -227,7 +227,6 @@ def np_rbf(_x, _y, gamma=1.):
 
 
 def numpy_rbf_kernel(_x, _y, gamma=1.):
-    # todo check and correct
     #n_k = tf.py_function(func=np_rbf, inp=[_x, _y, gamma], Tout=tf.float32, name=None).numpy()
     #tf_k = rbf(_x, _y, gamma=gamma)
     #print(np.allclose(n_k, tf_k))
@@ -238,9 +237,8 @@ def correlation(_x, _y, kernel=None):
     if kernel is None or kernel == "pearson":
         kernel_function = pearson_correlation
     elif kernel == "RBF":
-        # todo investigate and fix
-        #kernel_function = rbf
-        kernel_function = numpy_rbf_kernel
+        kernel_function = rbf
+        #kernel_function = numpy_rbf_kernel
     else:
         raise Exception("unknown Kernel function")
 
