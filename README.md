@@ -13,6 +13,23 @@ RRN integrates two jointly trained components: a Reparametrization model, which 
 
 ---
 
+## 📜 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## 📁 Repository Structure
+
+data/                 # Datasets or dataset generators
+model/                # Regression model architectures (if separate from rrn/)
+rrn/
+└── rrn.py            # Core RRN implementation and loss function
+example.py            # A usage test case
+README.md             # Project documentation (this file)
+
+---
+
 ## 📚 Reference
 
 If you use RRN in your research or development, please cite the following paper:
@@ -36,22 +53,5 @@ If you use RRN in your research or development, please cite the following paper:
   keywords = {Surrogate models, Dimension reduction, Shape optimisation, Aerodynamic, Uncertainty modeling, Artificial neural networks},
   abstract = {In aerodynamic shape optimization, dimension reduction and surrogate modeling are widely recognized for their potential to reduce the computational cost and time associated with computational fluid dynamics simulations and, subsequently, the numerical optimization process. This article introduces a novel unsupervised learning framework called the Reparameterization and Regression Network (RRN). The RRN is designed to simultaneously perform variable transformation for selective dimension reduction and surrogate modeling while constructing a regression model. The model comprises two interdependent sub-models: the reparameterization model, which transforms selected features, and the regression model, which predicts outputs based on the transformed features. Both components are trained jointly using a dataset of input variables and their corresponding outputs. The proposed approach excels in reducing the dimensionality of weakly correlated data while improving the predictive accuracy of surrogate models. Furthermore, it has proven effective and reliable for applications in deterministic and robust optimization. This capability is demonstrated through the aerodynamic optimization of a transonic wing parameterized using the free-form deformation technique.}
 }
-
----
-
-## 📜 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-## 📁 Repository Structure
-
-data/                 # Datasets or dataset generators
-model/                # Regression model architectures (if separate from rrn/)
-rrn/
-└── rrn.py            # Core RRN implementation and loss function
-example.py            # A usage test case
-README.md             # Project documentation (this file)
 
 
