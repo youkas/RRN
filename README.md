@@ -21,12 +21,12 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 📁 Repository Structure
 
-data/                 # Datasets or dataset generators
-model/                # Regression model architectures (if separate from rrn/)
-rrn/
-└── rrn.py            # Core RRN implementation and loss function
-example.py            # A usage test case
-README.md             # Project documentation (this file)
+data/                 # Datasets or dataset generators  
+model/                # Regression model architectures (if separate from rrn/)  
+rrn/  
+└── rrn.py            # Core RRN implementation and loss function  
+example.py            # A usage test case  
+README.md             # Project documentation (this file)  
 
 ---
 
