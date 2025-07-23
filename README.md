@@ -3,7 +3,9 @@
 **RRN** is an unsupervised learning framework for **simultaneous dimensionality reduction and surrogate modeling**, specifically designed for high-dimensional engineering problems with weak or no input correlations.
 
 🔗 **Read the original paper**:  
-[Unsupervised re-parametrization for simultaneous dimension reduction and surrogate modeling: Application to aerodynamic shape optimization](https://www.sciencedirect.com/science/article/pii/S0957417425022432?dgcid=author) – published in *Expert Systems with Applications*.
+[Unsupervised re-parametrization for simultaneous dimension reduction and surrogate modeling: Application to aerodynamic shape optimization](https://www.sciencedirect.com/science/article/pii/S0957417425022432)  
+
+Published in *Expert Systems with Applications* (2025).
 
 ---
 
