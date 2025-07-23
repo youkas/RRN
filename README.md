@@ -34,6 +34,11 @@ README.md             # Project documentation (this file)
 
 ## 📚 Reference
 
+To cite this repository:  
+
+[![DOI](https://zenodo.org/badge/681712595.svg)](https://doi.org/10.5281/zenodo.16362756)
+
+  
 If you use RRN in your research or development, please cite the following paper:
 
 > **Youness Karafi**, **Zakaria Moussaoui**, and **Badr Abou El Majd**  
