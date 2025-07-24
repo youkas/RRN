@@ -23,7 +23,8 @@ setup(
     ],
     python_requires=">=3.6",
     install_requires=[
-        "numpy==1.19.5",
-        "tensorflow==2.6.2",
+        "numpy>=1.22.0",
+        "tensorflow>=2.12.1",
+        "pymoo>=0.5.0",
     ],
 )
