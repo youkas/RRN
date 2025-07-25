@@ -195,13 +195,24 @@ def rbf(_x, _y, gamma=1.):
     _y = tf.cast(_y, tf.float32) if _y is not None else None
     xy = _x if _y is None else tf.concat([_x, _y], axis=1)
     xy = tf.transpose(xy)
-    dm_squared = distance_mat(xy)
-    return tf.exp(-gamma * tf.sqrt(dm_squared))
+    dm = distance_mat(xy)
+    return tf.exp(-gamma * tf.square(dm))
+
+
+def t_distribution(_x, _y, a=1., b=1.):
+    _x = tf.cast(_x, tf.float32)
+    _y = tf.cast(_y, tf.float32) if _y is not None else None
+    xy = _x if _y is None else tf.concat([_x, _y], axis=1)
+    xy = tf.transpose(xy)
+    dm = distance_mat(xy)
+    return a/(a + b*tf.pow(dm, 2))
 
 
 def correlation(_x, _y, kernel=None):
     if kernel is None or kernel == "pearson":
         kernel_function = pearson_correlation
+    elif kernel == "t":
+        kernel_function = t_distribution
     elif kernel == "RBF":
         kernel_function = rbf
     else:
