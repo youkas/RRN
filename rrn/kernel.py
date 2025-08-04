@@ -24,7 +24,8 @@ def pearson_correlation(_x, _y):
     xy_t = tf.concat([_x, _y], axis=0)
     mean_t = tf.reduce_mean(xy_t, axis=1, keepdims=True)
     cov_t = ((xy_t - mean_t) @ tf.transpose(xy_t - mean_t)) / tf.cast(dsize - 1, tf.float32)
-    cov2_t = tf.linalg.diag(1 / tf.sqrt(tf.linalg.diag_part(cov_t)))
+    # prevent division by zero
+    cov2_t = tf.linalg.diag(1 / tf.sqrt(tf.linalg.diag_part(tf.maximum(cov_t, tf.cast(10**-12, tf.float32)))))
     return cov2_t @ cov_t @ cov2_t
 
 
